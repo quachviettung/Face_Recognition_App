@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Đăng ký khuôn mặt - Hệ thống nhận diện khuôn mặt{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Đăng ký khuôn mặt mới
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="registerForm">
+                    <div class="mb-4">
+                        <label for="name" class="form-label">
+                            <i class="fas fa-user me-2"></i>Tên người
+                        </label>
+                        <input type="text" class="form-control form-control-lg" id="name" name="name" 
+                               placeholder="Nhập tên đầy đủ" required>
+                        <div class="form-text">Tên sẽ được hiển thị khi nhận diện khuôn mặt</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-image me-2"></i>Ảnh khuôn mặt
+                        </label>
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Kéo thả ảnh vào đây hoặc click để chọn</h5>
+                            <p class="text-muted mb-3">Hỗ trợ: JPG, PNG, GIF</p>
+                            <input type="file" id="imageInput" name="image" accept="image/*" class="d-none" required>
+                            <button type="button" class="btn btn-primary" onclick="document.getElementById('imageInput').click()">
+                                <i class="fas fa-folder-open me-2"></i>Chọn ảnh
+                            </button>
+                        </div>
+                        
+                        <div id="previewContainer" class="d-none mt-3">
+                            <div class="text-center">
+                                <img id="imagePreview" class="img-fluid rounded" style="max-height: 300px;">
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-secondary" onclick="resetUpload()">
+                                        <i class="fas fa-times me-2"></i>Chọn ảnh khác
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Ảnh nên có khuôn mặt rõ ràng, ánh sáng tốt và góc nhìn trực diện
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Lưu ý:</strong> 
+                            <ul class="mb-0 mt-2">
+                                <li>Chỉ sử dụng ảnh có khuôn mặt rõ ràng</li>
+                                <li>Ảnh nên có chất lượng tốt (không mờ, không tối)</li>
+                                <li>Khuôn mặt nên nhìn thẳng vào camera</li>
+                                <li>Tránh ảnh có nhiều khuôn mặt</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                            <i class="fas fa-save me-2"></i>Đăng ký khuôn mặt
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Quay lại trang chủ
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Tips Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-tips me-2"></i>
+                    Mẹo để có ảnh tốt
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-success">
+                            <i class="fas fa-check-circle me-2"></i>Nên làm
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Chụp ảnh với ánh sáng tự nhiên</li>
+                            <li>Khuôn mặt nhìn thẳng vào camera</li>
+                            <li>Khoảng cách vừa phải (không quá gần/xa)</li>
+                            <li>Ảnh có độ phân giải cao</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-danger">
+                            <i class="fas fa-times-circle me-2"></i>Không nên
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Ảnh bị mờ hoặc pixel</li>
+                            <li>Khuôn mặt bị che khuất</li>
+                            <li>Ánh sáng quá tối hoặc quá sáng</li>
+                            <li>Góc nhìn nghiêng quá nhiều</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedFile = null;
+
+// Drag and drop functionality
+const uploadArea = document.getElementById('uploadArea');
+const imageInput = document.getElementById('imageInput');
+const previewContainer = document.getElementById('previewContainer');
+const imagePreview = document.getElementById('imagePreview');
+const submitBtn = document.getElementById('submitBtn');
+
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFile(files[0]);
+    }
+});
+
+imageInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+    }
+});
+
+function handleFile(file) {
+    if (!file.type.startsWith('image/')) {
+        alert('Vui lòng chọn file ảnh!');
+        return;
+    }
+    
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        imagePreview.src = e.target.result;
+        previewContainer.classList.remove('d-none');
+        imageInput.files = new FileList([file]); // Update the file input
+    };
+    reader.readAsDataURL(file);
+}
+
+function resetUpload() {
+    selectedFile = null;
+    imageInput.value = '';
+    previewContainer.classList.add('d-none');
+}
+
+// Form validation
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    const image = document.getElementById('imageInput').files[0];
+    
+    if (!name) {
+        e.preventDefault();
+        alert('Vui lòng nhập tên!');
+        return;
+    }
+    
+    if (!image) {
+        e.preventDefault();
+        alert('Vui lòng chọn ảnh!');
+        return;
+    }
+    
+    // Show loading state
+    submitBtn.innerHTML = `
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Đang xử lý...
+    `;
+    submitBtn.disabled = true;
+});
+
+// FileList polyfill for older browsers
+class FileList extends Array {
+    constructor(files) {
+        super();
+        for (let i = 0; i < files.length; i++) {
+            this[i] = files[i];
+        }
+        this.length = files.length;
+    }
+}
+</script>
+{% endblock %}

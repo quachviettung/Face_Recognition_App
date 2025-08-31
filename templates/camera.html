@@ -1,0 +1,354 @@
+{% extends "base.html" %}
+
+{% block title %}Camera Real-time - Hệ thống nhận diện khuôn mặt{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-camera me-2"></i>
+                    Camera Real-time
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div id="cameraControls">
+                        <button class="btn btn-success btn-lg me-2" id="startCamera">
+                            <i class="fas fa-play me-2"></i>Bật camera
+                        </button>
+                        <button class="btn btn-danger btn-lg d-none" id="stopCamera">
+                            <i class="fas fa-stop me-2"></i>Tắt camera
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <video id="video" class="img-fluid rounded" style="max-width: 100%; max-height: 500px;" autoplay muted></video>
+                    <canvas id="canvas" class="d-none"></canvas>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="recognitionToggle" checked>
+                                <label class="form-check-label" for="recognitionToggle">
+                                    <i class="fas fa-brain me-2"></i>Bật nhận diện khuôn mặt
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="detectionToggle" checked>
+                                <label class="form-check-label" for="detectionToggle">
+                                    <i class="fas fa-eye me-2"></i>Bật phát hiện khuôn mặt
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="recognitionInfo" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Thông tin camera
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Trạng thái:</strong>
+                    <span id="cameraStatus" class="badge bg-secondary ms-2">Chưa khởi động</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Khuôn mặt phát hiện:</strong>
+                    <span id="faceCount" class="badge bg-primary ms-2">0</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>FPS:</strong>
+                    <span id="fps" class="badge bg-info ms-2">0</span>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Độ phân giải:</strong>
+                    <div id="resolution" class="text-muted">-</div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Hướng dẫn:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Click "Bật camera" để khởi động</li>
+                        <li>Điều chỉnh vị trí để camera nhìn rõ khuôn mặt</li>
+                        <li>Đảm bảo ánh sáng đủ sáng</li>
+                        <li>Nhìn thẳng vào camera để có kết quả tốt nhất</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cog me-2"></i>
+                    Cài đặt
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="cameraSelect" class="form-label">Chọn camera:</label>
+                    <select class="form-select" id="cameraSelect">
+                        <option value="">Đang tải...</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="qualitySelect" class="form-label">Chất lượng:</label>
+                    <select class="form-select" id="qualitySelect">
+                        <option value="640x480">640x480 (Nhanh)</option>
+                        <option value="1280x720" selected>1280x720 (Cân bằng)</option>
+                        <option value="1920x1080">1920x1080 (Chất lượng cao)</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="thresholdSlider" class="form-label">
+                        Ngưỡng nhận diện: <span id="thresholdValue">0.6</span>
+                    </label>
+                    <input type="range" class="form-range" id="thresholdSlider" 
+                           min="0.3" max="0.8" step="0.05" value="0.6">
+                    <div class="form-text">Giá trị thấp = nhận diện chính xác hơn, cao = ít lỗi hơn</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let stream = null;
+let video = document.getElementById('video');
+let canvas = document.getElementById('canvas');
+let ctx = canvas.getContext('2d');
+let animationId = null;
+let lastTime = 0;
+let frameCount = 0;
+let fps = 0;
+
+// Camera controls
+const startCameraBtn = document.getElementById('startCamera');
+const stopCameraBtn = document.getElementById('stopCamera');
+const cameraStatus = document.getElementById('cameraStatus');
+const faceCount = document.getElementById('faceCount');
+const fpsDisplay = document.getElementById('fps');
+const resolution = document.getElementById('resolution');
+const cameraSelect = document.getElementById('cameraSelect');
+const qualitySelect = document.getElementById('qualitySelect');
+const thresholdSlider = document.getElementById('thresholdSlider');
+const thresholdValue = document.getElementById('thresholdValue');
+
+// Toggles
+const recognitionToggle = document.getElementById('recognitionToggle');
+const detectionToggle = document.getElementById('detectionToggle');
+
+// Get available cameras
+async function getCameras() {
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        cameraSelect.innerHTML = '';
+        videoDevices.forEach(device => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            option.textContent = device.label || `Camera ${cameraSelect.options.length + 1}`;
+            cameraSelect.appendChild(option);
+        });
+        
+        if (videoDevices.length === 0) {
+            cameraSelect.innerHTML = '<option value="">Không tìm thấy camera</option>';
+        }
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách camera:', error);
+        cameraSelect.innerHTML = '<option value="">Lỗi khi tải camera</option>';
+    }
+}
+
+// Start camera
+async function startCamera() {
+    try {
+        const constraints = {
+            video: {
+                deviceId: cameraSelect.value ? { exact: cameraSelect.value } : undefined,
+                width: { ideal: parseInt(qualitySelect.value.split('x')[0]) },
+                height: { ideal: parseInt(qualitySelect.value.split('x')[1]) }
+            }
+        };
+        
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        
+        // Update UI
+        startCameraBtn.classList.add('d-none');
+        stopCameraBtn.classList.remove('d-none');
+        cameraStatus.textContent = 'Đang hoạt động';
+        cameraStatus.className = 'badge bg-success ms-2';
+        
+        // Get video dimensions
+        video.onloadedmetadata = () => {
+            resolution.textContent = `${video.videoWidth}x${video.videoHeight}`;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+        };
+        
+        // Start processing
+        startProcessing();
+        
+    } catch (error) {
+        console.error('Lỗi khi khởi động camera:', error);
+        alert('Không thể khởi động camera: ' + error.message);
+    }
+}
+
+// Stop camera
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    
+    if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+    }
+    
+    // Update UI
+    startCameraBtn.classList.remove('d-none');
+    stopCameraBtn.classList.add('d-none');
+    cameraStatus.textContent = 'Đã dừng';
+    cameraStatus.className = 'badge bg-secondary ms-2';
+    faceCount.textContent = '0';
+    fpsDisplay.textContent = '0';
+    resolution.textContent = '-';
+}
+
+// Start processing frames
+function startProcessing() {
+    function processFrame(currentTime) {
+        if (!stream) return;
+        
+        // Calculate FPS
+        frameCount++;
+        if (currentTime - lastTime >= 1000) {
+            fps = frameCount;
+            frameCount = 0;
+            lastTime = currentTime;
+            fpsDisplay.textContent = fps;
+        }
+        
+        // Process frame if toggles are enabled
+        if (detectionToggle.checked || recognitionToggle.checked) {
+            processVideoFrame();
+        }
+        
+        animationId = requestAnimationFrame(processFrame);
+    }
+    
+    animationId = requestAnimationFrame(processFrame);
+}
+
+// Process video frame for face detection/recognition
+function processVideoFrame() {
+    if (video.videoWidth === 0) return;
+    
+    // Draw current frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Here you would implement face detection/recognition
+    // For now, we'll just simulate it
+    simulateFaceDetection();
+}
+
+// Simulate face detection (replace with actual face recognition)
+function simulateFaceDetection() {
+    // This is a placeholder - in a real implementation, you would:
+    // 1. Send frame data to backend for processing
+    // 2. Receive face detection results
+    // 3. Draw bounding boxes and labels
+    
+    const randomFaces = Math.floor(Math.random() * 3); // Simulate 0-2 faces
+    faceCount.textContent = randomFaces;
+    
+    // Update recognition info
+    const recognitionInfo = document.getElementById('recognitionInfo');
+    if (randomFaces > 0) {
+        recognitionInfo.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-users me-2"></i>
+                Phát hiện ${randomFaces} khuôn mặt
+                ${recognitionToggle.checked ? ' - Đang xử lý nhận diện...' : ''}
+            </div>
+        `;
+    } else {
+        recognitionInfo.innerHTML = `
+            <div class="alert alert-warning">
+                <i class="fas fa-user-slash me-2"></i>
+                Không phát hiện khuôn mặt nào
+            </div>
+        `;
+    }
+}
+
+// Event listeners
+startCameraBtn.addEventListener('click', startCamera);
+stopCameraBtn.addEventListener('click', stopCamera);
+
+cameraSelect.addEventListener('change', () => {
+    if (stream) {
+        stopCamera();
+        setTimeout(startCamera, 100);
+    }
+});
+
+qualitySelect.addEventListener('change', () => {
+    if (stream) {
+        stopCamera();
+        setTimeout(startCamera, 100);
+    }
+});
+
+thresholdSlider.addEventListener('input', (e) => {
+    thresholdValue.textContent = e.target.value;
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    getCameras();
+    
+    // Request camera permission early
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            stream.getTracks().forEach(track => track.stop());
+        })
+        .catch(error => {
+            console.log('Camera permission not granted yet');
+        });
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    stopCamera();
+});
+</script>
+{% endblock %}
