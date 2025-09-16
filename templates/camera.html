@@ -125,9 +125,18 @@
                     <label for="thresholdSlider" class="form-label">
                         Ngưỡng nhận diện: <span id="thresholdValue">0.6</span>
                     </label>
-                    <input type="range" class="form-range" id="thresholdSlider" 
+                    <input type="range" class="form-range" id="thresholdSlider"
                            min="0.3" max="0.8" step="0.05" value="0.6">
                     <div class="form-text">Giá trị thấp = nhận diện chính xác hơn, cao = ít lỗi hơn</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="frameRateSlider" class="form-label">
+                        Tần suất xử lý: <span id="frameRateValue">5</span> FPS
+                    </label>
+                    <input type="range" class="form-range" id="frameRateSlider"
+                           min="1" max="10" step="1" value="5">
+                    <div class="form-text">Số frame xử lý mỗi giây (thấp = mượt hơn, cao = chính xác hơn)</div>
                 </div>
             </div>
         </div>
@@ -145,6 +154,8 @@ let animationId = null;
 let lastTime = 0;
 let frameCount = 0;
 let fps = 0;
+let lastProcessTime = 0;
+let isProcessing = false;
 
 // Camera controls
 const startCameraBtn = document.getElementById('startCamera');
@@ -157,6 +168,8 @@ const cameraSelect = document.getElementById('cameraSelect');
 const qualitySelect = document.getElementById('qualitySelect');
 const thresholdSlider = document.getElementById('thresholdSlider');
 const thresholdValue = document.getElementById('thresholdValue');
+const frameRateSlider = document.getElementById('frameRateSlider');
+const frameRateValue = document.getElementById('frameRateValue');
 
 // Toggles
 const recognitionToggle = document.getElementById('recognitionToggle');
@@ -247,7 +260,7 @@ function stopCamera() {
 function startProcessing() {
     function processFrame(currentTime) {
         if (!stream) return;
-        
+
         // Calculate FPS
         frameCount++;
         if (currentTime - lastTime >= 1000) {
@@ -256,57 +269,182 @@ function startProcessing() {
             lastTime = currentTime;
             fpsDisplay.textContent = fps;
         }
-        
-        // Process frame if toggles are enabled
-        if (detectionToggle.checked || recognitionToggle.checked) {
-            processVideoFrame();
-        }
-        
+
+        // Always process frame for display, but limit backend processing
+        processVideoFrame(currentTime);
+
         animationId = requestAnimationFrame(processFrame);
     }
-    
+
     animationId = requestAnimationFrame(processFrame);
 }
 
 // Process video frame for face detection/recognition
-function processVideoFrame() {
+async function processVideoFrame(currentTime) {
     if (video.videoWidth === 0) return;
-    
+
     // Draw current frame to canvas
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // Here you would implement face detection/recognition
-    // For now, we'll just simulate it
-    simulateFaceDetection();
+
+    // Rate limiting based on frame rate slider
+    const targetFPS = parseInt(frameRateSlider.value);
+    const frameInterval = 1000 / targetFPS; // milliseconds between frames
+
+    if (currentTime - lastProcessTime >= frameInterval && !isProcessing) {
+        lastProcessTime = currentTime;
+
+        // Send frame to backend for processing if detection is enabled
+        if (detectionToggle.checked) {
+            isProcessing = true;
+            await processFrameWithBackend();
+            isProcessing = false;
+        } else {
+            // Clear any previous drawings
+            clearFaceOverlays();
+            faceCount.textContent = '0';
+            updateRecognitionInfo(0, []);
+        }
+    }
 }
 
-// Simulate face detection (replace with actual face recognition)
-function simulateFaceDetection() {
-    // This is a placeholder - in a real implementation, you would:
-    // 1. Send frame data to backend for processing
-    // 2. Receive face detection results
-    // 3. Draw bounding boxes and labels
-    
-    const randomFaces = Math.floor(Math.random() * 3); // Simulate 0-2 faces
-    faceCount.textContent = randomFaces;
-    
-    // Update recognition info
+// Send frame to backend for face detection/recognition
+async function processFrameWithBackend() {
+    try {
+        // Convert canvas to blob
+        canvas.toBlob(async (blob) => {
+            if (!blob) return;
+
+            const formData = new FormData();
+            formData.append('frame', blob, 'camera_frame.jpg');
+
+            const response = await fetch('/process_camera_frame', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                console.error('Backend error:', result.error);
+                return;
+            }
+
+            // Update UI with results
+            faceCount.textContent = result.face_count;
+            updateRecognitionInfo(result.face_count, result.faces, result.warning);
+
+            // Draw face overlays on canvas
+            drawFaceOverlays(result.faces);
+
+        }, 'image/jpeg', 0.8);
+
+    } catch (error) {
+        console.error('Error processing frame:', error);
+        faceCount.textContent = '0';
+        updateRecognitionInfo(0, []);
+        clearFaceOverlays();
+    }
+}
+
+// Draw face detection overlays on canvas
+function drawFaceOverlays(faces) {
+    // Clear previous drawings
+    clearFaceOverlays();
+
+    faces.forEach((face, index) => {
+        const location = face.location;
+        const x = location.left;
+        const y = location.top;
+        const width = location.right - location.left;
+        const height = location.bottom - location.top;
+
+        // Draw bounding box
+        ctx.strokeStyle = face.has_match ? '#28a745' : '#ffc107';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x, y, width, height);
+
+        // Draw label background
+        const label = face.has_match ?
+            `${face.name} (${face.confidence_percentage}%)` :
+            `Unknown ${index + 1}`;
+
+        ctx.fillStyle = face.has_match ? '#28a745' : '#ffc107';
+        ctx.fillRect(x, y - 30, ctx.measureText(label).width + 10, 25);
+
+        // Draw label text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '16px Arial';
+        ctx.fillText(label, x + 5, y - 10);
+    });
+}
+
+// Clear face detection overlays
+function clearFaceOverlays() {
+    // Redraw the original video frame to clear overlays
+    if (video.videoWidth > 0) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
+}
+
+// Update recognition info display
+function updateRecognitionInfo(faceCount, faces, warning = null) {
     const recognitionInfo = document.getElementById('recognitionInfo');
-    if (randomFaces > 0) {
+
+    // Hiển thị cảnh báo nếu có
+    if (warning) {
         recognitionInfo.innerHTML = `
-            <div class="alert alert-info">
-                <i class="fas fa-users me-2"></i>
-                Phát hiện ${randomFaces} khuôn mặt
-                ${recognitionToggle.checked ? ' - Đang xử lý nhận diện...' : ''}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${warning}
+                <br><small><a href="/" class="text-decoration-none">👆 Đăng ký khuôn mặt tại đây</a></small>
             </div>
         `;
-    } else {
+        return;
+    }
+
+    if (faceCount === 0) {
         recognitionInfo.innerHTML = `
             <div class="alert alert-warning">
                 <i class="fas fa-user-slash me-2"></i>
                 Không phát hiện khuôn mặt nào
             </div>
         `;
+    } else {
+        let infoHtml = `
+            <div class="alert alert-info">
+                <i class="fas fa-users me-2"></i>
+                Phát hiện ${faceCount} khuôn mặt
+            </div>
+        `;
+
+        if (faces.length > 0 && recognitionToggle.checked) {
+            infoHtml += '<div class="mt-2">';
+
+            faces.forEach((face, index) => {
+                if (face.has_match) {
+                    const confidenceClass = face.confidence_level === 'high' ? 'success' :
+                                          face.confidence_level === 'medium' ? 'warning' : 'secondary';
+
+                    infoHtml += `
+                        <div class="alert alert-${confidenceClass} py-2 mb-1">
+                            <strong>${face.name}</strong> -
+                            Độ tin cậy: ${face.confidence_percentage}% (${face.confidence_level})
+                        </div>
+                    `;
+                } else {
+                    const message = face.message || `Khuôn mặt ${index + 1}: Không xác định`;
+                    infoHtml += `
+                        <div class="alert alert-secondary py-2 mb-1">
+                            <strong>${message}</strong>
+                        </div>
+                    `;
+                }
+            });
+
+            infoHtml += '</div>';
+        }
+
+        recognitionInfo.innerHTML = infoHtml;
     }
 }
 
@@ -330,6 +468,10 @@ qualitySelect.addEventListener('change', () => {
 
 thresholdSlider.addEventListener('input', (e) => {
     thresholdValue.textContent = e.target.value;
+});
+
+frameRateSlider.addEventListener('input', (e) => {
+    frameRateValue.textContent = e.target.value;
 });
 
 // Initialize

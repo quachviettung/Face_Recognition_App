@@ -64,7 +64,35 @@
                 </h4>
             </div>
             <div class="card-body">
-                <div class="upload-area" id="uploadArea">
+                <!-- Tab Navigation -->
+                <ul class="nav nav-tabs" id="recognitionTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="image-tab" data-bs-toggle="tab" data-bs-target="#image-panel" type="button" role="tab">
+                            <i class="fas fa-image me-2"></i>Ảnh
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="video-tab" data-bs-toggle="tab" data-bs-target="#video-panel" type="button" role="tab">
+                            <i class="fas fa-video me-2"></i>Video
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch-panel" type="button" role="tab">
+                            <i class="fas fa-layer-group me-2"></i>Batch
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="verify-tab" data-bs-toggle="tab" data-bs-target="#verify-panel" type="button" role="tab">
+                            <i class="fas fa-shield-alt me-2"></i>Xác minh
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content mt-3" id="recognitionTabsContent">
+                    <!-- Image Recognition Tab -->
+                    <div class="tab-pane fade show active" id="image-panel" role="tabpanel">
+                        <div class="upload-area" id="imageUploadArea">
                     <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
                     <h5 class="text-muted">Kéo thả ảnh vào đây hoặc click để chọn</h5>
                     <p class="text-muted mb-3">Hỗ trợ: JPG, PNG, GIF</p>
@@ -74,15 +102,154 @@
                     </button>
                 </div>
                 
-                <div id="previewContainer" class="d-none mt-3">
+                        <div id="imagePreviewContainer" class="d-none mt-3">
                     <img id="imagePreview" class="img-fluid rounded" style="max-height: 400px;">
                     <div class="mt-3">
-                        <button class="btn btn-success" onclick="recognizeFace()">
+                                <button class="btn btn-success" onclick="recognizeImage()">
+                                    <i class="fas fa-search me-2"></i>Nhận diện
+                                </button>
+                                <button class="btn btn-secondary" onclick="resetImageUpload()">
+                                    <i class="fas fa-times me-2"></i>Hủy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Video Recognition Tab -->
+                    <div class="tab-pane fade" id="video-panel" role="tabpanel">
+                        <div class="upload-area" id="videoUploadArea">
+                            <i class="fas fa-film fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Kéo thả video vào đây hoặc click để chọn</h5>
+                            <p class="text-muted mb-3">Hỗ trợ: MP4, AVI, MOV, MKV, WebM</p>
+                            <input type="file" id="videoInput" accept="video/*" class="d-none">
+                            <button class="btn btn-primary" onclick="document.getElementById('videoInput').click()">
+                                <i class="fas fa-folder-open me-2"></i>Chọn video
+                            </button>
+                        </div>
+
+                        <div id="videoPreviewContainer" class="d-none mt-3">
+                            <video id="videoPreview" class="img-fluid rounded" style="max-height: 400px;" controls></video>
+                            <div class="mt-3">
+                                <button class="btn btn-success" onclick="recognizeVideo()">
                             <i class="fas fa-search me-2"></i>Nhận diện
                         </button>
-                        <button class="btn btn-secondary" onclick="resetUpload()">
+                                <button class="btn btn-secondary" onclick="resetVideoUpload()">
+                                    <i class="fas fa-times me-2"></i>Hủy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Batch Recognition Tab -->
+                    <div class="tab-pane fade" id="batch-panel" role="tabpanel">
+                        <div class="row">
+                            <!-- Batch Images -->
+                            <div class="col-md-6">
+                                <div class="upload-area" id="batchImageUploadArea">
+                                    <i class="fas fa-images fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">Xử lý nhiều ảnh cùng lúc</h5>
+                                    <p class="text-muted mb-3">Hỗ trợ: JPG, PNG, GIF</p>
+                                    <input type="file" id="batchImageInput" accept="image/*" multiple class="d-none">
+                                    <button class="btn btn-primary" onclick="document.getElementById('batchImageInput').click()">
+                                        <i class="fas fa-folder-open me-2"></i>Chọn nhiều ảnh
+                                    </button>
+                                </div>
+
+                                <div id="batchImagePreviewContainer" class="d-none mt-3">
+                                    <div id="batchImagePreview" class="mb-3"></div>
+                                    <div class="mt-3">
+                                        <button class="btn btn-success" onclick="recognizeBatchImages()">
+                                            <i class="fas fa-search me-2"></i>Nhận diện batch
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="resetBatchImageUpload()">
+                                            <i class="fas fa-times me-2"></i>Hủy
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Batch Videos -->
+                            <div class="col-md-6">
+                                <div class="upload-area" id="batchVideoUploadArea">
+                                    <i class="fas fa-film fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">Xử lý nhiều video cùng lúc</h5>
+                                    <p class="text-muted mb-3">Hỗ trợ: MP4, AVI, MOV, MKV, WebM</p>
+                                    <input type="file" id="batchVideoInput" accept="video/*" multiple class="d-none">
+                                    <button class="btn btn-primary" onclick="document.getElementById('batchVideoInput').click()">
+                                        <i class="fas fa-folder-open me-2"></i>Chọn nhiều video
+                                    </button>
+                                </div>
+
+                                <div id="batchVideoPreviewContainer" class="d-none mt-3">
+                                    <div id="batchVideoPreview" class="mb-3"></div>
+                                    <div class="mt-3">
+                                        <button class="btn btn-success" onclick="recognizeBatchVideos()">
+                                            <i class="fas fa-search me-2"></i>Nhận diện batch
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="resetBatchVideoUpload()">
+                                            <i class="fas fa-times me-2"></i>Hủy
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Face Verification Tab -->
+                    <div class="tab-pane fade" id="verify-panel" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="fas fa-user-check me-2"></i>Chọn người cần xác minh</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="personSelect" class="form-label">Chọn người từ cơ sở dữ liệu:</label>
+                                            <select class="form-select" id="personSelect">
+                                                <option value="">-- Chọn người --</option>
+                                                {% for name in known_faces.keys() %}
+                                                <option value="{{ name }}">{{ name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="text-center">
+                                            <i class="fas fa-arrow-right fa-2x text-muted"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="upload-area" id="verifyUploadArea">
+                                    <i class="fas fa-upload fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">Upload ảnh cần xác minh</h5>
+                                    <p class="text-muted mb-3">Hỗ trợ: JPG, PNG, GIF</p>
+                                    <input type="file" id="verifyImageInput" accept="image/*" class="d-none">
+                                    <button class="btn btn-primary" onclick="document.getElementById('verifyImageInput').click()">
+                                        <i class="fas fa-folder-open me-2"></i>Chọn ảnh
+                                    </button>
+                                </div>
+
+                                <div id="verifyPreviewContainer" class="d-none mt-3">
+                                    <img id="verifyImagePreview" class="img-fluid rounded" style="max-height: 200px;">
+                                    <div class="mt-3">
+                                        <button class="btn btn-success" onclick="verifyFace()">
+                                            <i class="fas fa-shield-alt me-2"></i>Xác minh
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="resetVerifyUpload()">
                             <i class="fas fa-times me-2"></i>Hủy
                         </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div id="verifyResultContainer"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -150,70 +317,379 @@
 
 {% block scripts %}
 <script>
-let selectedFile = null;
+let selectedImageFile = null;
+let selectedVideoFile = null;
 
-// Drag and drop functionality
-const uploadArea = document.getElementById('uploadArea');
+// Image upload functionality
+const imageUploadArea = document.getElementById('imageUploadArea');
 const imageInput = document.getElementById('imageInput');
-const previewContainer = document.getElementById('previewContainer');
+const imagePreviewContainer = document.getElementById('imagePreviewContainer');
 const imagePreview = document.getElementById('imagePreview');
+
+// Video upload functionality
+const videoUploadArea = document.getElementById('videoUploadArea');
+const videoInput = document.getElementById('videoInput');
+const videoPreviewContainer = document.getElementById('videoPreviewContainer');
+const videoPreview = document.getElementById('videoPreview');
+
 const resultContainer = document.getElementById('resultContainer');
 
-uploadArea.addEventListener('dragover', (e) => {
+// Batch processing variables
+let selectedBatchImageFiles = [];
+let selectedBatchVideoFiles = [];
+
+// Face verification variables
+let selectedVerifyImageFile = null;
+
+// Face verification functionality
+const batchImageUploadArea = document.getElementById('batchImageUploadArea');
+const batchImageInput = document.getElementById('batchImageInput');
+const batchImagePreviewContainer = document.getElementById('batchImagePreviewContainer');
+const batchImagePreview = document.getElementById('batchImagePreview');
+
+// Batch video upload functionality
+const batchVideoUploadArea = document.getElementById('batchVideoUploadArea');
+const batchVideoInput = document.getElementById('batchVideoInput');
+const batchVideoPreviewContainer = document.getElementById('batchVideoPreviewContainer');
+const batchVideoPreview = document.getElementById('batchVideoPreview');
+
+// Face verification elements
+const verifyImageInput = document.getElementById('verifyImageInput');
+const verifyUploadArea = document.getElementById('verifyUploadArea');
+const verifyPreviewContainer = document.getElementById('verifyPreviewContainer');
+const verifyImagePreview = document.getElementById('verifyImagePreview');
+const verifyResultContainer = document.getElementById('verifyResultContainer');
+const personSelect = document.getElementById('personSelect');
+
+// Image drag and drop
+imageUploadArea.addEventListener('dragover', (e) => {
     e.preventDefault();
-    uploadArea.classList.add('dragover');
+    imageUploadArea.classList.add('dragover');
 });
 
-uploadArea.addEventListener('dragleave', () => {
-    uploadArea.classList.remove('dragover');
+imageUploadArea.addEventListener('dragleave', () => {
+    imageUploadArea.classList.remove('dragover');
 });
 
-uploadArea.addEventListener('drop', (e) => {
+imageUploadArea.addEventListener('drop', (e) => {
     e.preventDefault();
-    uploadArea.classList.remove('dragover');
+    imageUploadArea.classList.remove('dragover');
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-        handleFile(files[0]);
+        handleImageFile(files[0]);
     }
 });
 
 imageInput.addEventListener('change', (e) => {
     if (e.target.files.length > 0) {
-        handleFile(e.target.files[0]);
+        handleImageFile(e.target.files[0]);
     }
 });
 
-function handleFile(file) {
+// Video drag and drop
+videoUploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    videoUploadArea.classList.add('dragover');
+});
+
+videoUploadArea.addEventListener('dragleave', () => {
+    videoUploadArea.classList.remove('dragover');
+});
+
+videoUploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    videoUploadArea.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleVideoFile(files[0]);
+    }
+});
+
+videoInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleVideoFile(e.target.files[0]);
+    }
+});
+
+// Batch image event listeners
+batchImageInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleBatchImageFiles(e.target.files);
+    }
+});
+
+// Batch video event listeners
+batchVideoInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleBatchVideoFiles(e.target.files);
+    }
+});
+
+// Face verification event listeners
+verifyImageInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleVerifyImageFile(e.target.files[0]);
+    }
+});
+
+function handleImageFile(file) {
     if (!file.type.startsWith('image/')) {
         alert('Vui lòng chọn file ảnh!');
         return;
     }
     
-    selectedFile = file;
+    selectedImageFile = file;
     const reader = new FileReader();
     reader.onload = (e) => {
         imagePreview.src = e.target.result;
-        previewContainer.classList.remove('d-none');
+        imagePreviewContainer.classList.remove('d-none');
         resultContainer.innerHTML = '';
     };
     reader.readAsDataURL(file);
 }
 
-function resetUpload() {
-    selectedFile = null;
+function handleVideoFile(file) {
+    if (!file.type.startsWith('video/')) {
+        alert('Vui lòng chọn file video!');
+        return;
+    }
+
+    selectedVideoFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        videoPreview.src = e.target.result;
+        videoPreviewContainer.classList.remove('d-none');
+        resultContainer.innerHTML = '';
+    };
+    reader.readAsDataURL(file);
+}
+
+function resetImageUpload() {
+    selectedImageFile = null;
     imageInput.value = '';
-    previewContainer.classList.add('d-none');
+    imagePreviewContainer.classList.add('d-none');
     resultContainer.innerHTML = '';
 }
 
-async function recognizeFace() {
-    if (!selectedFile) {
+function resetVideoUpload() {
+    selectedVideoFile = null;
+    videoInput.value = '';
+    videoPreviewContainer.classList.add('d-none');
+    resultContainer.innerHTML = '';
+}
+
+// Batch processing functions
+function handleBatchImageFiles(files) {
+    selectedBatchImageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+
+    if (selectedBatchImageFiles.length === 0) {
+        alert('Không có file ảnh hợp lệ!');
+        return;
+    }
+
+    // Display preview
+    displayBatchImagePreview(selectedBatchImageFiles);
+    batchImagePreviewContainer.classList.remove('d-none');
+    resultContainer.innerHTML = '';
+}
+
+function handleBatchVideoFiles(files) {
+    selectedBatchVideoFiles = Array.from(files).filter(file => file.type.startsWith('video/'));
+
+    if (selectedBatchVideoFiles.length === 0) {
+        alert('Không có file video hợp lệ!');
+        return;
+    }
+
+    // Display preview
+    displayBatchVideoPreview(selectedBatchVideoFiles);
+    batchVideoPreviewContainer.classList.remove('d-none');
+    resultContainer.innerHTML = '';
+}
+
+function displayBatchImagePreview(files) {
+    let html = `<div class="row">`;
+    files.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const previewHtml = `
+                <div class="col-md-3 mb-3">
+                    <div class="card">
+                        <img src="${e.target.result}" class="card-img-top" style="height: 100px; object-fit: cover;">
+                        <div class="card-body p-2">
+                            <small class="text-muted">${file.name}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            batchImagePreview.innerHTML += previewHtml;
+        };
+        reader.readAsDataURL(file);
+    });
+    html += `</div>`;
+}
+
+function displayBatchVideoPreview(files) {
+    let html = `<div class="row">`;
+    files.forEach((file, index) => {
+        const previewHtml = `
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-video fa-2x text-primary mb-2"></i>
+                        <small class="text-muted">${file.name}</small>
+                        <br>
+                        <small class="text-muted">${(file.size / (1024*1024)).toFixed(1)} MB</small>
+                    </div>
+                </div>
+            </div>
+        `;
+        batchVideoPreview.innerHTML += previewHtml;
+    });
+    html += `</div>`;
+}
+
+function resetBatchImageUpload() {
+    selectedBatchImageFiles = [];
+    batchImageInput.value = '';
+    batchImagePreview.innerHTML = '';
+    batchImagePreviewContainer.classList.add('d-none');
+    resultContainer.innerHTML = '';
+}
+
+function resetBatchVideoUpload() {
+    selectedBatchVideoFiles = [];
+    batchVideoInput.value = '';
+    batchVideoPreview.innerHTML = '';
+    batchVideoPreviewContainer.classList.add('d-none');
+    resultContainer.innerHTML = '';
+}
+
+// Face verification functions
+function handleVerifyImageFile(file) {
+    if (!file.type.startsWith('image/')) {
+        alert('Vui lòng chọn file ảnh!');
+        return;
+    }
+
+    selectedVerifyImageFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        verifyImagePreview.src = e.target.result;
+        verifyPreviewContainer.classList.remove('d-none');
+        verifyResultContainer.innerHTML = '';
+    };
+    reader.readAsDataURL(file);
+}
+
+function resetVerifyUpload() {
+    selectedVerifyImageFile = null;
+    verifyImageInput.value = '';
+    verifyPreviewContainer.classList.add('d-none');
+    verifyResultContainer.innerHTML = '';
+}
+
+async function verifyFace() {
+    const selectedPerson = personSelect.value;
+    if (!selectedPerson) {
+        alert('Vui lòng chọn người cần xác minh!');
+        return;
+    }
+
+    if (!selectedVerifyImageFile) {
+        alert('Vui lòng chọn ảnh cần xác minh!');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('image', selectedVerifyImageFile);
+    formData.append('person_name', selectedPerson);
+
+    try {
+        verifyResultContainer.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang xử lý...</span>
+                </div>
+                <p class="mt-2">Đang xác minh danh tính...</p>
+            </div>
+        `;
+
+        const response = await fetch('/verify_face', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            displayVerificationResult(result);
+        } else {
+            verifyResultContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${result.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        verifyResultContainer.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Lỗi khi xử lý: ${error.message}
+            </div>
+        `;
+    }
+}
+
+function displayVerificationResult(result) {
+    const statusClass = result.is_verified ? 'success' : 'danger';
+    const statusIcon = result.is_verified ? 'check-circle' : 'times-circle';
+    const statusText = result.is_verified ? 'XÁC MINH THÀNH CÔNG' : 'XÁC MINH THẤT BẠI';
+
+    let html = `
+        <div class="card border-${statusClass}">
+            <div class="card-header bg-${statusClass} text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-${statusIcon} me-2"></i>
+                    ${statusText}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Thông tin xác minh:</h6>
+                        <p class="mb-1"><strong>Người cần xác minh:</strong> ${result.person_name}</p>
+                        <p class="mb-1"><strong>Độ tương đồng:</strong> ${result.similarity.toFixed(4)}</p>
+                        <p class="mb-1"><strong>Độ tin cậy:</strong> ${result.confidence_percentage}%</p>
+                        <p class="mb-0"><strong>Ngưỡng xác minh:</strong> ${result.verification_threshold}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Kết quả:</h6>
+                        <div class="alert alert-${statusClass}">
+                            ${result.result_text}
+                        </div>
+                        ${result.is_verified ?
+                            '<div class="text-success"><i class="fas fa-shield-alt me-2"></i>Danh tính đã được xác minh thành công!</div>' :
+                            '<div class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Không thể xác minh danh tính.</div>'
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    verifyResultContainer.innerHTML = html;
+}
+
+async function recognizeImage() {
+    if (!selectedImageFile) {
         alert('Vui lòng chọn ảnh trước!');
         return;
     }
     
     const formData = new FormData();
-    formData.append('image', selectedFile);
+    formData.append('image', selectedImageFile);
     
     try {
         resultContainer.innerHTML = `
@@ -221,7 +697,7 @@ async function recognizeFace() {
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Đang xử lý...</span>
                 </div>
-                <p class="mt-2">Đang nhận diện khuôn mặt...</p>
+                <p class="mt-2">Đang nhận diện khuôn mặt trong ảnh...</p>
             </div>
         `;
         
@@ -233,7 +709,7 @@ async function recognizeFace() {
         const result = await response.json();
         
         if (result.success) {
-            displayResults(result);
+            displayImageResults(result);
         } else {
             resultContainer.innerHTML = `
                 <div class="alert alert-danger">
@@ -252,7 +728,149 @@ async function recognizeFace() {
     }
 }
 
-function displayResults(result) {
+async function recognizeVideo() {
+    if (!selectedVideoFile) {
+        alert('Vui lòng chọn video trước!');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('video', selectedVideoFile);
+
+    try {
+        resultContainer.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang xử lý...</span>
+                </div>
+                <p class="mt-2">Đang nhận diện khuôn mặt trong video...<br><small class="text-muted">Quá trình này có thể mất vài phút</small></p>
+            </div>
+        `;
+
+        const response = await fetch('/recognize_video', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            displayVideoResults(result);
+        } else {
+            resultContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${result.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        resultContainer.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Lỗi khi xử lý: ${error.message}
+            </div>
+        `;
+    }
+}
+
+async function recognizeBatchImages() {
+    if (selectedBatchImageFiles.length === 0) {
+        alert('Vui lòng chọn ảnh trước!');
+        return;
+    }
+
+    const formData = new FormData();
+    selectedBatchImageFiles.forEach(file => {
+        formData.append('images', file);
+    });
+
+    try {
+        resultContainer.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang xử lý...</span>
+                </div>
+                <p class="mt-2">Đang nhận diện ${selectedBatchImageFiles.length} ảnh...<br><small class="text-muted">Quá trình này có thể mất vài phút</small></p>
+            </div>
+        `;
+
+        const response = await fetch('/batch_recognize_images', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            displayBatchImageResults(result);
+        } else {
+            resultContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${result.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        resultContainer.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Lỗi khi xử lý: ${error.message}
+            </div>
+        `;
+    }
+}
+
+async function recognizeBatchVideos() {
+    if (selectedBatchVideoFiles.length === 0) {
+        alert('Vui lòng chọn video trước!');
+        return;
+    }
+
+    const formData = new FormData();
+    selectedBatchVideoFiles.forEach(file => {
+        formData.append('videos', file);
+    });
+
+    try {
+        resultContainer.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang xử lý...</span>
+                </div>
+                <p class="mt-2">Đang nhận diện ${selectedBatchVideoFiles.length} video...<br><small class="text-muted">Quá trình này có thể mất rất nhiều thời gian</small></p>
+            </div>
+        `;
+
+        const response = await fetch('/batch_recognize_videos', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            displayBatchVideoResults(result);
+        } else {
+            resultContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${result.error}
+                </div>
+            `;
+        }
+    } catch (error) {
+        resultContainer.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Lỗi khi xử lý: ${error.message}
+            </div>
+        `;
+    }
+}
+
+function displayImageResults(result) {
     let html = `
         <div class="alert alert-success">
             <i class="fas fa-check-circle me-2"></i>
@@ -263,29 +881,25 @@ function displayResults(result) {
     if (result.results.length > 0) {
         html += '<div class="row">';
         result.results.forEach((face, index) => {
-            // Debug: In ra dữ liệu face để kiểm tra
-            console.log(`Face ${index + 1}:`, face);
-            
             const bestMatch = face.best_match;
             const matches = face.matches || [];
             
-            // Hiển thị kết quả nhận diện
             let matchText = 'Không xác định';
             let isRecognized = false;
+            let confidence = 0;
             
             if (bestMatch && bestMatch.length >= 2) {
                 const name = bestMatch[0];
                 const similarity = bestMatch[1];
-                const confidence = ((1 - similarity) * 100).toFixed(1);
+                confidence = ((1 - similarity) * 100).toFixed(1);
                 matchText = `${name} (${confidence}%)`;
                 isRecognized = true;
             } else if (matches.length > 0) {
-                // Fallback: sử dụng matches nếu best_match không có
                 const firstMatch = matches[0];
                 if (firstMatch && firstMatch.length >= 2) {
                     const name = firstMatch[0];
                     const similarity = firstMatch[1];
-                    const confidence = ((1 - similarity) * 100).toFixed(1);
+                    confidence = ((1 - similarity) * 100).toFixed(1);
                     matchText = `${name} (${confidence}%)`;
                     isRecognized = true;
                 }
@@ -307,6 +921,309 @@ function displayResults(result) {
             `;
         });
         html += '</div>';
+    }
+    
+    resultContainer.innerHTML = html;
+}
+
+function displayVideoResults(result) {
+    let html = `
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i>
+            Xử lý video hoàn tất!
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-number">${result.face_count}</div>
+                        <p class="mb-0">Tổng khuôn mặt phát hiện</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-number">${result.recognized_faces}</div>
+                        <p class="mb-0">Khuôn mặt được nhận diện</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Hiển thị thống kê theo người
+    if (result.person_stats && Object.keys(result.person_stats).length > 0) {
+        html += `
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-users me-2"></i>Thống kê theo người</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+        `;
+
+        Object.entries(result.person_stats).forEach(([name, stats]) => {
+            const avgConfidence = ((1 - stats.avg_similarity) * 100).toFixed(1);
+            html += `
+                <div class="col-md-6 mb-3">
+                    <div class="card border-primary">
+                        <div class="card-body">
+                            <h6 class="card-title text-primary">${name}</h6>
+                            <p class="mb-1"><strong>Số lần xuất hiện:</strong> ${stats.count}</p>
+                            <p class="mb-1"><strong>Độ tin cậy trung bình:</strong> ${avgConfidence}%</p>
+                            <p class="mb-0"><strong>Số frame:</strong> ${stats.frames.length}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Hiển thị chi tiết từng khuôn mặt
+    if (result.results.length > 0) {
+        html += `
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-list me-2"></i>Chi tiết nhận diện</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Frame</th>
+                                    <th>Thời gian</th>
+                                    <th>Kết quả</th>
+                                    <th>Độ tin cậy</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+        `;
+
+        result.results.forEach((face, index) => {
+            const frameNumber = face.frame_number || 'N/A';
+            const timestamp = face.timestamp ? face.timestamp.toFixed(1) + 's' : 'N/A';
+            const bestMatch = face.best_match;
+
+            let matchText = 'Không xác định';
+            let confidence = '0%';
+            let statusClass = 'text-warning';
+            let statusText = 'Chưa biết';
+
+            if (bestMatch && bestMatch.length >= 2) {
+                const name = bestMatch[0];
+                const similarity = bestMatch[1];
+                confidence = ((1 - similarity) * 100).toFixed(1) + '%';
+                matchText = name;
+                statusClass = 'text-success';
+                statusText = 'Đã nhận diện';
+            }
+
+            html += `
+                <tr>
+                    <td>${frameNumber}</td>
+                    <td>${timestamp}</td>
+                    <td>${matchText}</td>
+                    <td>${confidence}</td>
+                    <td><span class="${statusClass}">${statusText}</span></td>
+                </tr>
+            `;
+        });
+
+        html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    resultContainer.innerHTML = html;
+}
+
+function displayBatchImageResults(result) {
+    let html = `
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i>
+            Xử lý batch hoàn tất!
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-number">${result.summary.total_files}</div>
+                        <p class="mb-0">Tổng ảnh</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-number">${result.summary.successful_files}</div>
+                        <p class="mb-0">Thành công</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-number">${result.summary.total_faces}</div>
+                        <p class="mb-0">Tổng khuôn mặt</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-number">${result.summary.total_recognized}</div>
+                        <p class="mb-0">Được nhận diện</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Display results for each image
+    if (result.results.length > 0) {
+        html += `
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-images me-2"></i>Chi tiết kết quả</h6>
+                </div>
+                <div class="card-body">
+        `;
+
+        result.results.forEach((imageResult, index) => {
+            const status = imageResult.error ? 'danger' : 'success';
+            const statusText = imageResult.error ? 'Lỗi' : 'Thành công';
+            const recognized = imageResult.error ? 0 : (imageResult.faces.filter(f => f.best_match).length);
+
+            html += `
+                <div class="card mb-3 border-${status}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6 class="card-title">${imageResult.file_name}</h6>
+                                <p class="mb-1"><strong>Trạng thái:</strong>
+                                    <span class="badge bg-${status}">${statusText}</span>
+                                </p>
+                                <p class="mb-1"><strong>Khuôn mặt phát hiện:</strong> ${imageResult.face_count}</p>
+                                <p class="mb-0"><strong>Khuôn mặt nhận diện:</strong> ${recognized}</p>
+                                ${imageResult.error ? `<p class="mb-0 text-danger"><strong>Lỗi:</strong> ${imageResult.error}</p>` : ''}
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <small class="text-muted">${new Date(imageResult.processed_at).toLocaleTimeString()}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+    }
+
+    resultContainer.innerHTML = html;
+}
+
+function displayBatchVideoResults(result) {
+    let html = `
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i>
+            Xử lý batch video hoàn tất!
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-number">${result.summary.total_files}</div>
+                        <p class="mb-0">Tổng video</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-number">${result.summary.successful_files}</div>
+                        <p class="mb-0">Thành công</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-number">${result.summary.total_faces}</div>
+                        <p class="mb-0">Tổng khuôn mặt</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="stats-number">${result.summary.total_unique_persons}</div>
+                        <p class="mb-0">Người duy nhất</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Display results for each video
+    if (result.results.length > 0) {
+        html += `
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-film me-2"></i>Chi tiết kết quả</h6>
+                </div>
+                <div class="card-body">
+        `;
+
+        result.results.forEach((videoResult, index) => {
+            const status = videoResult.error ? 'danger' : 'success';
+            const statusText = videoResult.error ? 'Lỗi' : 'Thành công';
+
+            html += `
+                <div class="card mb-3 border-${status}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6 class="card-title">${videoResult.file_name}</h6>
+                                <p class="mb-1"><strong>Trạng thái:</strong>
+                                    <span class="badge bg-${status}">${statusText}</span>
+                                </p>
+                                <p class="mb-1"><strong>Khuôn mặt phát hiện:</strong> ${videoResult.face_count}</p>
+                                <p class="mb-1"><strong>Khuôn mặt nhận diện:</strong> ${videoResult.recognized_faces || 0}</p>
+                                <p class="mb-0"><strong>Người duy nhất:</strong> ${videoResult.unique_persons || 0}</p>
+                                ${videoResult.error ? `<p class="mb-0 text-danger"><strong>Lỗi:</strong> ${videoResult.error}</p>` : ''}
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <small class="text-muted">${new Date(videoResult.processed_at).toLocaleTimeString()}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
     }
     
     resultContainer.innerHTML = html;
